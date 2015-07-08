@@ -1,0 +1,44 @@
+@charset "utf-8";
+/* CSS Document */
+.fiveStone {
+    background:url("../images/gameshare_bg.png") 0 0 no-repeat;
+    background-size:100% 100%;
+    height:100%;
+    /*pointer-events: none;*/
+    -webkit-user-select: none;/*禁用手机浏览器的用户选择功能 */
+    -moz-user-select: none;
+}
+.chessboard {
+    width:309px;
+    height:327px;
+    margin:0 auto;
+    position:relative;
+    background:url("../images/game_small_bg_chess_board.png") 0 0 no-repeat;
+    background-size:100% 100%;
+    pointer-events: none;
+/*    cursor:pointer;*/
+}
+#canvas {
+    width:309px;
+    height:327px;
+    position:relative;
+    pointer-events: auto;
+}
+.piece {
+    width:20px;
+    height:20px;
+    position:absolute;
+}
+.white {
+    background:url("../images/game_white_chess_node.png") 0 0 no-repeat;
+    background-size:100% 100%;
+    pointer-events: none;
+}
+.black {
+    background:url("../images/game_black_chess_node.png") 0 0 no-repeat;
+    background-size:100% 100%;
+    pointer-events: none;
+}
+/**{
+    pointer-events: none;
+}*/
