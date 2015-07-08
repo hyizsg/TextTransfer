@@ -67,10 +67,7 @@ var app = {
 
     onReceive: function(msg) {
         var _self = this;
-        _self = this;
-        console.log("App onReceive: msg");
-        console.log(msg);
-        switch(parseInt(msg.action)) {
+        switch(msg.action) {
             case 2001: 
                 {
                     chessCanvas.drawPiece(msg);
@@ -87,13 +84,11 @@ var app = {
             default:
                 break;
         }
-    },
+    }
 
     bindClick: function() {
         var _self = this;
-        chessCanvas.canvas.bind('ontouchend', function(e) {
-            console.log(ontouchend);
-            alert(e);
+        chessCanvas.canvas.bind('click', function(e) {
             var X = Math.round((e.offsetX - _self.lefOffset) / _self.cellWidth);
             var Y = Math.round((e.offsetY - _self.topOffset) / _self.cellHeight);
             if (_self.boardData[X][Y] == -1) {
@@ -102,6 +97,7 @@ var app = {
             };
         });
     },
+
     init: function() {
         var _self = this;
         _self.bindClick();

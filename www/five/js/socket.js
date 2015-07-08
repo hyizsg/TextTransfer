@@ -33,24 +33,6 @@ var socket = {
         };
     },
 
-    send: function(msg) {
-        var _self = this;
-        miniserver.handle(msg);
-        $.ajax({
-            url: 'ajax',
-            type: 'get',
-            data: msg,
-            dataType: 'json',
-            success: function(re) {
-                // console.log(re);
-            },
-            error: function(er) {
-                // console.log(er);
-            },
-        });
-    },
-
-
     startlisten: function() {
         var _self = this;
         $.ajax({
@@ -68,13 +50,47 @@ var socket = {
         });
     },
 
+    send: function(msg) {
+        var _self = this;
+        miniserver.handle(msg);
+        console.log("socket send: ");
+        console.log(msg);
+        msg = _self.encode(msg);
+        $.ajax({
+            url: 'ajax',
+            type: 'get',
+            data: msg,
+            dataType: 'json',
+            success: function(re) {
+                // console.log(re);
+            },
+            error: function(er) {
+                // console.log(er);
+            },
+        });
+    },
+
+
     response: function(msg) {
         var _self = this;
+        msg = _self.decode(msg);
+        console.log("socket reveive: ");
+        console.log(msg);
         for (var i in _self.linsenlist) {
             var target = _self.linsenlist[i].target;
             var callback = _self.linsenlist[i].callback;
             target[callback](msg);
         };
+    },
+
+    encode: function(msg) {
+        msg = {'data': JSON.stringify(msg)};
+        return msg;
+    },
+
+    decode: function(msg) {
+        msg = JSON.parse(msg.data);
+        return msg;
     },
 
     init: function() {
@@ -86,7 +102,7 @@ var socket = {
 var game = {
 
     user:{
-        uid: -1,
+        uid: 1001,
         token: '',
         nickname: '游客',
     },
@@ -118,9 +134,9 @@ var miniserver = {
     
     validate: function(pos, dx, dy) {
         var _self = this;
-        var turn = parseInt(pos.turn);
-        var posX = parseInt(pos.X);
-        var posY = parseInt(pos.Y);
+        var turn = pos.turn;
+        var posX = pos.X;
+        var posY = pos.Y;
         var i = 0, count1 = 0, count2 = 0;
         for (i = 0; i < 5 && posX + i * dx < 15 && posX + i * dx >= 0 && posY + i * dy < 15; i++) {
            if (game.boardData[posX + i * dx][posY + i * dy] == turn) {
@@ -137,7 +153,7 @@ var miniserver = {
            }
         }
 
-        console.log('turn:' + turn + ' count: '+ count1 + ", " + count2);
+        console.log('turn:' + turn + ' count: '+ count1 + "+" + count2);
         if (count1 + count2 >= 5) {
             return turn;
         }
@@ -156,7 +172,7 @@ var miniserver = {
 
     handle: function(msg) {
         _self = this;
-        switch(parseInt(msg.action)) {
+        switch(msg.action) {
             case 2001:
                 {
                     game.boardData[msg.X][msg.Y] = msg.turn;
@@ -171,8 +187,6 @@ var miniserver = {
         return true;
     },
 
-    
-
     init: function() {
         var _self = this;
     }
@@ -182,18 +196,17 @@ var miniclient = {
 
     onReceive: function(msg) {
         _self = this;
-        switch(parseInt(msg.action)) {
+        switch(msg.action) {
             case 301: 
                 {
-                    game.user = JSON.parse(msg.user);
-                    console.log(game.user);
+                    game.user = clone(msg.user);
                 }
                 break;
             case 2001:
                 {
-                    game.boardData[msg.X][msg.Y] = parseInt(msg.turn);
-                    game.turn = parseInt(msg.turn) == 0 ? 1 : 0;
-                    game.winner = parseInt(msg.winner);
+                    game.boardData[msg.X][msg.Y] = msg.turn;
+                    game.turn = msg.turn == 0 ? 1 : 0;
+                    game.winner = msg.winner;
                 }
                 break;
             default:
@@ -213,13 +226,13 @@ var miniclient = {
             cookie.addCookie('nickname', game.user.nickname, 72);
         }
         else {
-            game.user.uid = cookie.getCookie('uid');
+            game.user.uid = parseInt(cookie.getCookie('uid'));
             game.user.nickname = cookie.getCookie('nickname');
         }
 
         socket.send({
             'action': 301,
-            'user': JSON.stringify(game.user),
+            'user': game.user,
         });
     }
 };
@@ -281,3 +294,33 @@ var uuid = {
         return uuid.join('');
     },
 };
+
+var clone = function(obj){
+    var o;
+    switch(typeof obj){
+    case 'undefined': break;
+    case 'string'   : o = obj + '';break;
+    case 'number'   : o = obj - 0;break;
+    case 'boolean'  : o = obj;break;
+    case 'object'   :
+        if(obj === null){
+            o = null;
+        }else{
+            if(obj instanceof Array){
+                o = [];
+                for(var i = 0, len = obj.length; i < len; i++){
+                    o.push(clone(obj[i]));
+                }
+            }else{
+                o = {};
+                for(var k in obj){
+                    o[k] = clone(obj[k]);
+                }
+            }
+        }
+        break;
+    default:        
+        o = obj;break;
+    }
+    return o;   
+}
