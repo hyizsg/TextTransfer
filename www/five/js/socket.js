@@ -39,10 +39,13 @@ var socket = {
             url: 'connect.socket',
             type: 'post',
             data: '',
+            async: true, 
             dataType: 'json',
             success: function(re) {
-                _self.response(re);
                 _self.startlisten();
+                setTimeout(function(){
+                    _self.response(re);
+                }, 100);
             },
             error: function() {
                 _self.startlisten();
@@ -60,6 +63,7 @@ var socket = {
             url: 'ajax',
             type: 'get',
             data: msg,
+            async: true, 
             dataType: 'json',
             success: function(re) {
                 // console.log(re);
@@ -107,6 +111,14 @@ var game = {
         nickname: '游客',
     },
 
+    players: {
+
+    },
+
+    playerlist:[
+
+    ],
+
     turn: 0,
     winner: -1,
     boardData: [
@@ -138,15 +150,18 @@ var miniserver = {
         var posX = pos.X;
         var posY = pos.Y;
         var i = 0, count1 = 0, count2 = 0;
+        var array = [];
         for (i = 0; i < 5 && posX + i * dx < 15 && posX + i * dx >= 0 && posY + i * dy < 15; i++) {
            if (game.boardData[posX + i * dx][posY + i * dy] == turn) {
+                array.push([posX + i * dx, posY + i * dy]);
                 count1++;
            } else {
                 break;
            }
         }
-        for (i = 1; i < 5 && posX - i * dx >= 0 && posX - i * dx < 15 && posY - i * dy >=0; i++) {
+        for (i = 1; i < 5 && posX - i * dx >= 0 && posX - i * dx < 15 && posY - i * dy >= 0; i++) {
            if (game.boardData[posX - i * dx][posY - i * dy] == turn) {
+                array.push([posX - i * dx, posY - i * dy]);
                 count2++;
            } else {
                 break;
@@ -155,18 +170,18 @@ var miniserver = {
 
         console.log('turn:' + turn + ' count: '+ count1 + "+" + count2);
         if (count1 + count2 >= 5) {
-            return turn;
+            return [turn, array];
         }
-        return -1;
+        return [-1, array];
     },
 
     checkBoard: function(pos) {
         var _self = this;
-        var winner = -1;
-        if (winner == -1) winner = _self.validate(pos, 1, 0); //   --
-        if (winner == -1) winner = _self.validate(pos, 1, 1); //   /
-        if (winner == -1) winner = _self.validate(pos, 0, 1); //   |
-        if (winner == -1) winner = _self.validate(pos, -1, 1); //  \
+        var winner = [-1, []];
+        if (winner[0] == -1) winner = _self.validate(pos, 1, 0); //   --
+        if (winner[0] == -1) winner = _self.validate(pos, 1, 1); //   /
+        if (winner[0] == -1) winner = _self.validate(pos, 0, 1); //   |
+        if (winner[0] == -1) winner = _self.validate(pos, -1, 1); //  \
         return winner;
     },
 
@@ -199,7 +214,33 @@ var miniclient = {
         switch(msg.action) {
             case 301: 
                 {
-                    game.user = clone(msg.user);
+                    // 是自己，修改信息
+                    if (msg.user.token == game.user.token) {
+                        game.user = msg.user;
+                    }
+
+                    // 存储自己或别人的信息
+                    if (!(msg.user.token in game.players)) {
+                        game.players[msg.user.token] = msg.user;
+                        game.playerlist.push(msg.user);
+                    };
+                    
+                    // 不是自己的时候，302广播自己的信息
+                    if (msg.user.token != game.user.token) {
+                        socket.send({
+                            'action': 302,
+                            'user': game.user,
+                        }); 
+                    }
+                }
+                break;
+            case 302:
+                {
+                    // 存储别人的信息
+                    if (!(msg.user.token in game.players)) {
+                        game.players[msg.user.token] = msg.user;
+                        game.playerlist.push(msg.user);
+                    };
                 }
                 break;
             case 2001:
@@ -228,12 +269,20 @@ var miniclient = {
         else {
             game.user.uid = parseInt(cookie.getCookie('uid'));
             game.user.nickname = cookie.getCookie('nickname');
+            console.log("get nickname: " + game.user.nickname);
         }
 
         socket.send({
             'action': 301,
             'user': game.user,
         });
+
+        // window.onbeforeunload = function() {
+        //     socket.send({
+        //         'action': 303,
+        //         'user': game.user,
+        //     });
+        // };
     }
 };
 
@@ -253,7 +302,7 @@ var cookie = {
         var arrCookie = strCookie.split("; "); 
         for(var i = 0; i < arrCookie.length; i++){ 
             var arr = arrCookie[i].split("="); 
-            if(arr[0] == name) return arr[1]; 
+            if(arr[0] == name) return unescape(arr[1]); 
         } 
         return ""; 
     },

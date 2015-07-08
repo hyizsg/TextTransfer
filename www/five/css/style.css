@@ -13,7 +13,7 @@
     height:327px;
     margin:0 auto;
     position:relative;
-    /*background:url("../images/game_small_bg_chess_board.png") 0 0 no-repeat;*/
+    background:url("../images/game_small_bg_chess_board.png") 0 0 no-repeat;
     background-size:100% 100%;
     pointer-events: none;
 /*    cursor:pointer;*/

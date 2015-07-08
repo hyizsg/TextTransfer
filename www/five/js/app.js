@@ -68,6 +68,14 @@ var app = {
     onReceive: function(msg) {
         var _self = this;
         switch(msg.action) {
+            case 301:
+            case 302:
+                {
+                    for (var i in game.playerlist) {
+                        $('#userName' + i).val(game.playerlist[i].nickname + game.playerlist[i].token);
+                    };
+                }
+                break;
             case 2001: 
                 {
                     chessCanvas.drawPiece(msg);
@@ -76,15 +84,17 @@ var app = {
                     _self.turn = msg.turn == 0 ? 1 : 0;
                     _self.winner = msg.winner;
 
-                    if ( _self.winner != -1) {
-                        alert('winner: ' + _self.winner);
+                    if ( _self.winner[0] != -1) {
+                        setTimeout(function(){
+                            alert('winner: ' + _self.winner);
+                        }, 200)
                     };
                 }
                 break;
             default:
                 break;
         }
-    }
+    },
 
     bindClick: function() {
         var _self = this;
